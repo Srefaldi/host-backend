@@ -6,7 +6,10 @@ const STUDENT_TOKEN = process.env.STUDENT_TOKEN || "123";
 
 // Login Controller
 export const Login = async (req, res) => {
-  console.log(`[LOGIN] Received login request: NIS=${req.body.nis}`);
+  console.log(
+    `[LOGIN] Received login request: NIS=${req.body.nis}, Body:`,
+    req.body
+  );
   try {
     // Validasi input
     if (!req.body.nis || !req.body.password) {
@@ -45,19 +48,38 @@ export const Login = async (req, res) => {
       `[LOGIN] Saving session for user: NIS=${user.nis}, UUID=${user.uuid}`
     );
     req.session.userId = user.uuid;
+
+    // Verifikasi sesi tersimpan
+    if (req.session.userId !== user.uuid) {
+      console.error(
+        `[LOGIN] Failed to save session: userId not set in session`
+      );
+      return res.status(500).json({ msg: "Gagal menyimpan sesi" });
+    }
     console.log(
       `[LOGIN] Session created: sessionID=${req.sessionID}, userId=${req.session.userId}`
     );
 
-    // Kirim respons
-    const { uuid, name, nis, role } = user;
-    console.log(
-      `[LOGIN] Login successful: NIS=${nis}, Name=${name}, Role=${role}`
-    );
-    res.status(200).json({ uuid, name, nis, role });
+    // Simpan sesi secara eksplisit
+    req.session.save((err) => {
+      if (err) {
+        console.error(`[LOGIN] Error saving session: ${err.message}`);
+        return res.status(500).json({ msg: "Gagal menyimpan sesi" });
+      }
+      console.log(`[LOGIN] Session saved successfully for NIS=${user.nis}`);
+
+      // Kirim respons
+      const { uuid, name, nis, role } = user;
+      console.log(
+        `[LOGIN] Login successful: NIS=${nis}, Name=${name}, Role=${role}`
+      );
+      res.status(200).json({ uuid, name, nis, role });
+    });
   } catch (error) {
     console.error(`[LOGIN] Error: ${error.message}, Stack: ${error.stack}`);
-    res.status(500).json({ msg: "Terjadi kesalahan pada server" });
+    res
+      .status(500)
+      .json({ msg: "Terjadi kesalahan pada server", error: error.message });
   }
 };
 
