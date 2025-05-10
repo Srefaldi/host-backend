@@ -6,7 +6,19 @@ const STUDENT_TOKEN = process.env.STUDENT_TOKEN || "123";
 
 // Login Controller
 export const Login = async (req, res) => {
+  console.log(`[LOGIN] Received login request: NIS=${req.body.nis}`);
   try {
+    // Validasi input
+    if (!req.body.nis || !req.body.password) {
+      console.log(
+        `[LOGIN] Missing required fields: NIS=${req.body.nis}, Password=${!!req
+          .body.password}`
+      );
+      return res.status(400).json({ msg: "NIS dan password wajib diisi" });
+    }
+
+    // Cari pengguna di database
+    console.log(`[LOGIN] Searching for user with NIS=${req.body.nis}`);
     const user = await User.findOne({
       where: {
         nis: req.body.nis,
@@ -14,24 +26,37 @@ export const Login = async (req, res) => {
     });
 
     if (!user) {
-      console.log(`Login failed: User with NIS ${req.body.nis} not found`);
+      console.log(`[LOGIN] User with NIS ${req.body.nis} not found`);
       return res.status(404).json({ msg: "User tidak ditemukan" });
     }
+    console.log(`[LOGIN] User found: NIS=${user.nis}, UUID=${user.uuid}`);
 
+    // Verifikasi password
+    console.log(`[LOGIN] Verifying password for NIS=${req.body.nis}`);
     const match = await argon2.verify(user.password, req.body.password);
     if (!match) {
-      console.log(`Login failed: Incorrect password for NIS ${req.body.nis}`);
+      console.log(`[LOGIN] Incorrect password for NIS=${req.body.nis}`);
       return res.status(400).json({ msg: "Password salah" });
     }
+    console.log(`[LOGIN] Password verified for NIS=${req.body.nis}`);
 
+    // Simpan sesi
+    console.log(
+      `[LOGIN] Saving session for user: NIS=${user.nis}, UUID=${user.uuid}`
+    );
     req.session.userId = user.uuid;
     console.log(
-      `Login successful: Session created for user ${user.nis}, sessionID: ${req.sessionID}, userId: ${req.session.userId}`
+      `[LOGIN] Session created: sessionID=${req.sessionID}, userId=${req.session.userId}`
     );
+
+    // Kirim respons
     const { uuid, name, nis, role } = user;
+    console.log(
+      `[LOGIN] Login successful: NIS=${nis}, Name=${name}, Role=${role}`
+    );
     res.status(200).json({ uuid, name, nis, role });
   } catch (error) {
-    console.error(`Login error: ${error.message}`);
+    console.error(`[LOGIN] Error: ${error.message}, Stack: ${error.stack}`);
     res.status(500).json({ msg: "Terjadi kesalahan pada server" });
   }
 };
