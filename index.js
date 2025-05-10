@@ -25,17 +25,24 @@ const store = new sessionStore({
   expiration: 24 * 60 * 60 * 1000, // Sesi berlaku selama 24 jam
 });
 
+// Sinkronisasi database
 (async () => {
   try {
-    // Sinkronkan semua tabel secara otomatis
-    await db.sync({ force: false });
-    console.log("All database tables synced");
-
-    // Sinkronkan tabel sesi
     await store.sync({ force: false });
     console.log("Sessions table synced");
+    await Kkm.sync({ force: false });
+    console.log("KKM table synced");
+    await Question.sync({ force: false });
+    console.log("Questions table synced");
+    await Score.sync({ force: false });
+    console.log("Scores table synced");
+    await Evaluation.sync({ force: false });
+    console.log("Evaluations table synced");
+    await User.sync({ force: false });
+    console.log("Users table synced");
 
-    // Inisialisasi data awal untuk Evaluations
+    console.log("Database synced successfully");
+
     const evaluations = await Evaluation.findAll();
     if (evaluations.length === 0) {
       for (let i = 1; i <= 6; i++) {
@@ -50,7 +57,6 @@ const store = new sessionStore({
       console.log("Evaluations initialized");
     }
 
-    // Inisialisasi data awal untuk KKM
     const kkmRecords = await Kkm.findAll();
     if (kkmRecords.length === 0) {
       const evaluations = await Evaluation.findAll();
@@ -67,6 +73,29 @@ const store = new sessionStore({
   }
 })();
 
+// Konfigurasi CORS
+const allowedOrigins = [
+  "http://localhost:3000", // Untuk pengembangan lokal
+  // Tambahkan origin produksi frontend, misalnya:
+  // "https://your-frontend.vercel.app",
+];
+
+app.use(
+  cors({
+    credentials: true,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// Konfigurasi sesi
 app.use(
   session({
     secret: process.env.SESS_SECRET || "your-secret-key",
@@ -74,20 +103,11 @@ app.use(
     saveUninitialized: false,
     store: store,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // Gunakan secure di produksi
+      secure: process.env.NODE_ENV === "production" ? true : false, // Hanya secure di produksi
       httpOnly: true,
-      sameSite: "none",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Gunakan "none" untuk cross-site di produksi
       maxAge: 24 * 60 * 60 * 1000, // 24 jam
     },
-  })
-);
-
-app.use(
-  cors({
-    credentials: true,
-    origin: ["http://localhost:3000"],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 

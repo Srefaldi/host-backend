@@ -14,25 +14,35 @@ export const Login = async (req, res) => {
     });
 
     if (!user) {
+      console.log(`Login failed: User with NIS ${req.body.nis} not found`);
       return res.status(404).json({ msg: "User tidak ditemukan" });
     }
 
     const match = await argon2.verify(user.password, req.body.password);
     if (!match) {
+      console.log(`Login failed: Incorrect password for NIS ${req.body.nis}`);
       return res.status(400).json({ msg: "Password salah" });
     }
 
     req.session.userId = user.uuid;
+    console.log(
+      `Login successful: Session created for user ${user.nis}, sessionID: ${req.sessionID}, userId: ${req.session.userId}`
+    );
     const { uuid, name, nis, role } = user;
     res.status(200).json({ uuid, name, nis, role });
   } catch (error) {
+    console.error(`Login error: ${error.message}`);
     res.status(500).json({ msg: "Terjadi kesalahan pada server" });
   }
 };
 
 // Controller untuk mendapatkan informasi pengguna yang sedang login
 export const Me = async (req, res) => {
+  console.log(
+    `Me request: sessionID: ${req.sessionID}, userId: ${req.session.userId}`
+  );
   if (!req.session.userId) {
+    console.log("Me failed: No userId in session");
     return res.status(401).json({ msg: "Mohon login ke akun anda" });
   }
 
@@ -45,22 +55,29 @@ export const Me = async (req, res) => {
     });
 
     if (!user) {
+      console.log(
+        `Me failed: User not found for userId: ${req.session.userId}`
+      );
       return res.status(404).json({ msg: "User tidak ditemukan" });
     }
 
+    console.log(`Me successful: User found - ${user.nis}`);
     res.status(200).json(user);
   } catch (error) {
-    console.error("Error di Me:", error.message);
+    console.error(`Me error: ${error.message}`);
     res.status(500).json({ msg: "Terjadi kesalahan pada server" });
   }
 };
 
 // Controller untuk logout
 export const logOut = (req, res) => {
+  console.log(`Logout request: sessionID: ${req.sessionID}`);
   req.session.destroy((err) => {
     if (err) {
+      console.error(`Logout error: ${err.message}`);
       return res.status(400).json({ msg: "Tidak dapat logout" });
     }
+    console.log("Logout successful");
     res.status(200).json({ msg: "Berhasil logout" });
   });
 };
@@ -70,6 +87,7 @@ export const RegisterGuru = async (req, res) => {
   const { fullName, nip, password, school } = req.body;
 
   if (!fullName || !nip || !password || !school) {
+    console.log("RegisterGuru failed: Missing required fields");
     return res.status(400).json({ msg: "Semua kolom wajib diisi" });
   }
 
@@ -77,6 +95,7 @@ export const RegisterGuru = async (req, res) => {
     where: { nis: nip },
   });
   if (existingUser) {
+    console.log(`RegisterGuru failed: NIP ${nip} already registered`);
     return res.status(400).json({ msg: "NIP sudah terdaftar" });
   }
 
@@ -90,10 +109,10 @@ export const RegisterGuru = async (req, res) => {
       school,
       status: "BELUM SELESAI",
     });
+    console.log(`RegisterGuru successful: NIP ${nip}`);
     res.status(201).json({ msg: "Registrasi guru berhasil" });
   } catch (error) {
-    console.error("Error during registration:", error.message);
-    console.error("Stack trace:", error.stack);
+    console.error(`RegisterGuru error: ${error.message}`);
     res
       .status(500)
       .json({ msg: "Terjadi kesalahan pada server", error: error.message });
@@ -102,16 +121,18 @@ export const RegisterGuru = async (req, res) => {
 
 // Controller untuk registrasi siswa
 export const RegisterSiswa = async (req, res) => {
-  console.log("Request body:", req.body); // Log untuk debugging
+  console.log("RegisterSiswa request:", req.body);
   const { fullName, nis, password, class: studentClass, token } = req.body;
 
   // Validasi input
   if (!fullName || !nis || !password || !studentClass || !token) {
+    console.log("RegisterSiswa failed: Missing required fields");
     return res.status(400).json({ msg: "Semua kolom wajib diisi" });
   }
 
   // Validasi token
   if (token !== STUDENT_TOKEN) {
+    console.log("RegisterSiswa failed: Invalid token");
     return res.status(403).json({ msg: "Token tidak valid" });
   }
 
@@ -120,6 +141,7 @@ export const RegisterSiswa = async (req, res) => {
     where: { nis },
   });
   if (existingUser) {
+    console.log(`RegisterSiswa failed: NIS ${nis} already registered`);
     return res.status(400).json({ msg: "NIS sudah terdaftar" });
   }
 
@@ -133,10 +155,10 @@ export const RegisterSiswa = async (req, res) => {
       class: studentClass,
       status: "BELUM SELESAI",
     });
+    console.log(`RegisterSiswa successful: NIS ${nis}`);
     res.status(201).json({ msg: "Registrasi siswa berhasil" });
   } catch (error) {
-    console.error("Error during student registration:", error.message);
-    console.error("Stack trace:", error.stack);
+    console.error(`RegisterSiswa error: ${error.message}`);
     res
       .status(500)
       .json({ msg: "Terjadi kesalahan pada server", error: error.message });
