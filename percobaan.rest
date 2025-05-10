@@ -1,0 +1,306 @@
+# Pengujian Fitur KKM
+# Catatan: Ganti <your_session_cookie> dengan cookie sesi yang valid setelah login.
+# Pastikan server backend berjalan di http://localhost:5000.
+
+### 1. Daftar Guru (Admin)
+POST http://localhost:5000/register-guru
+Content-Type: application/json
+
+{
+  "fullName": "Admin KKM",
+  "nip": "123456789",
+  "password": "admin123",
+  "school": "SMA 1 Jakarta"
+}
+
+### 2. Login sebagai Admin
+POST http://localhost:5000/login
+Content-Type: application/json
+
+{
+  "nis": "123456789",
+  "password": "admin123"
+}
+
+# Catatan: Salin cookie connect.sid dari header respons untuk digunakan di bawah.
+
+### 3. Ambil Data KKM (Admin)
+GET http://localhost:5000/kkm
+Cookie: connect.sid=<your_session_cookie>
+
+# Harus mengembalikan daftar KKM untuk setiap evaluasi (bab 1-6 dan evaluasi akhir).
+
+### 4. Atur KKM untuk Evaluasi Bab 1 (Admin)
+POST http://localhost:5000/kkm
+Content-Type: application/json
+Cookie: connect.sid=<your_session_cookie>
+
+{
+  "evaluation_id": 1,
+  "kkm": 80
+}
+
+# Harus mengembalikan status 201 (dibuat) atau 200 (diperbarui) dengan pesan sukses.
+
+### 5. Atur KKM untuk Evaluasi Akhir (Admin)
+POST http://localhost:5000/kkm
+Content-Type: application/json
+Cookie: connect.sid=<your_session_cookie>
+
+{
+  "evaluation_id": 7,
+  "kkm": 85
+}
+
+# Harus mengembalikan status 201 (dibuat) atau 200 (diperbarui) dengan pesan sukses.
+
+### 6. Validasi KKM Tidak Valid (Admin)
+POST http://localhost:5000/kkm
+Content-Type: application/json
+Cookie: connect.sid=<your_session_cookie>
+
+{
+  "evaluation_id": 1,
+  "kkm": 101
+}
+
+# Harus mengembalikan status 400 dengan pesan "KKM harus angka antara 0 dan 100".
+
+### 7. Daftar Siswa (Non-Admin)
+POST http://localhost:5000/register-siswa
+Content-Type: application/json
+
+{
+  "fullName": "Siswa Test",
+  "nis": "1234",
+  "password": "siswa123",
+  "class": "10A",
+  "token": "123"
+}
+
+### 8. Login sebagai Siswa
+POST http://localhost:5000/login
+Content-Type: application/json
+
+{
+  "nis": "1234",
+  "password": "siswa123"
+}
+
+# Catatan: Salin cookie connect.sid dari header respons untuk digunakan di bawah.
+
+### 9. Coba Ambil KKM sebagai Siswa
+GET http://localhost:5000/kkm
+Cookie: connect.sid=<your_session_cookie>
+
+# Harus mengembalikan status 403 dengan pesan "Hanya admin yang dapat mengakses".
+
+### 10. Coba Atur KKM sebagai Siswa
+POST http://localhost:5000/kkm
+Content-Type: application/json
+Cookie: connect.sid=<your_session_cookie>
+
+{
+  "evaluation_id": 1,
+  "kkm": 80
+}
+
+# Harus mengembalikan status 403 dengan pesan "Hanya admin yang dapat mengakses".
+
+### 11. Logout
+DELETE http://localhost:5000/logout
+Cookie: connect.sid=<your_session_cookie>
+
+
+
+# Create User
+POST http://localhost:5000/users
+Content-Type: application/json
+
+
+{
+    "name": "Siswa 2",
+    "password": "1234",
+    "confPassword": "123",
+    "role": "user",
+    "nis":"12345"
+}
+###
+# Get all user
+GET http://localhost:5000/users
+
+
+###
+# GET SINGLE USER
+GET http://localhost:5000/users/97340949-2eee-43fe-836e-3f142f17875f
+
+
+###
+# Login request
+POST http://localhost:5000/login
+Content-Type: application/json
+
+{
+    "nis": "1234",
+    "password": "123"
+}
+
+###
+# Update
+PATCH  http://localhost:5000/users/00cc4abd-25a7-49f2-ad23-e5fe488bdd7e
+Content-Type: application/json
+
+
+{
+    "name": "Siswa",
+    "nis": "1234",
+    "password": "123",
+
+    "confPassword": "123",
+    "role": "user"
+}
+
+
+###
+# Delate
+DELETE http://localhost:5000/users/2a60f550-bf95-4453-8ab9-455e57c78361
+
+
+
+### 
+# Login USer
+
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+    "nis": "1234",
+    "password": "123"
+}
+
+###
+POST http://localhost:5000/login
+Content-Type: application/json
+
+{
+    "email": "Faldi@gmail.com",
+    "password": "123456"
+}
+
+
+###
+GET http://localhost:5000/me
+Content-Type: application/json
+
+
+
+
+
+###
+# Dafatr Guru
+POST http://localhost:5000/register-guru
+Content-Type: application/json
+
+{
+  "fullName": "John Doe",
+  "nip": "123456789",
+  "password": "password123",
+  "school": "SMA 1 Jakarta"
+}
+####
+#Daftar Siswa
+POST http://localhost:5000/register-siswa
+Content-Type: application/json
+
+{
+  "fullName": "SISWA",
+  "nis": "1234",
+  "password": "123",
+  "class": "10A",
+  "token": "123"
+}
+
+###
+# Update Progress
+PATCH http://localhost:5000/users/1b72a99a-6991-439a-ae5f-fe82d29834e9/progress
+Content-Type: application/json
+
+{
+  "progress": 100
+}
+
+
+####
+# Latihan 1
+
+POST http://localhost:5000/scores
+Content-Type: application/json
+
+{
+  "user_id": "1b72a99a-6991-439a-ae5f-fe82d29834e9",
+  "type": "latihan",
+  "chapter": 1,
+  "score": 100
+}
+###
+# Login request
+POST http://localhost:5000/login
+Content-Type: application/json
+
+{
+    "nis": "1234",
+    "password": "123"
+}
+###
+DELETE http://localhost:5000/logout
+Content-Type: application/json
+
+###
+# Update Progress
+PATCH http://localhost:5000/users/5901973c-6963-4d5c-a285-f04cb6830f28/progress
+Content-Type: application/json
+
+{
+  "progress": 100
+}
+###
+# CRUD
+#BUAT
+POST http://localhost:5000/questions
+Content-Type: application/json
+Cookie: connect.sid=<your_session_cookie>
+
+{
+  "evaluation_id": 1,
+  "question_text": "Coba",
+  "option_a": "Jakarta",
+  "option_b": "Bandung",
+  "option_c": "Surabaya",
+  "option_d": "Medan",
+  "option_e": "Makassar",
+  "correct_answer": "A"
+}
+###
+#AMBIL
+GET http://localhost:5000/questions/evaluation/1
+Cookie: connect.sid=<your_session_cookie>
+
+###
+#UPDATE
+PATCH http://localhost:5000/questions/1
+Content-Type: application/json
+Cookie: connect.sid=<your_session_cookie>
+
+{
+  "question_text": "Apa ibu kota negara Indonesia?",
+  "option_a": "Jakarta",
+  "option_b": "Bandung",
+  "option_c": "Surabaya",
+  "option_d": "Medan",
+  "option_e": "Makassar",
+  "correct_answer": "A"
+}
+###
+#HAPUS
+DELETE http://localhost:5000/questions/1
+Cookie: connect.sid=<your_session_cookie>

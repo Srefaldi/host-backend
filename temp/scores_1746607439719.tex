@@ -1,0 +1,42 @@
+
+\documentclass[a4paper,12pt]{article}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{pdflscape}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{array}
+\usepackage{colortbl}
+\definecolor{gray}{rgb}{0.9,0.9,0.9}
+
+\begin{document}
+
+\begin{landscape}
+\begin{center}
+{\Large \textbf{Daftar Nilai Siswa }}
+\end{center}
+
+\vspace{0.5cm}
+
+\begin{longtable}{|c|c|c|*{6}{c}|*{6}{c}|c|}
+\hline
+\rowcolor{gray}
+\textbf{NIS} & \textbf{Nama} & \textbf{Kelas} & \multicolumn{6}{c|}{\textbf{Latihan Bab}} & \multicolumn{6}{c|}{\textbf{Kuis Bab}} & \textbf{Evaluasi Akhir} \\
+\cline{4-15}
+\rowcolor{gray}
+& & & 1 & 2 & 3 & 4 & 5 & 6 & 1 & 2 & 3 & 4 & 5 & 6 & \\
+\hline
+\endhead
+100 & Mencoba & 10C & 90 & - & - & - & - & - & - & - & - & - & - & - & - \\ \hline
+9936 & nandaazein & 10A & 20 & - & - & - & - & - & - & - & - & - & - & - & - \\ \hline
+1234 & SISWA 1 & 10A & 70 & 90 & - & 0 & - & - & 20 & - & 0 & 10 & 0 & 20 & 5 \\ \hline
+222 & SISWA 2 & 10B & - & - & - & - & - & - & - & - & - & - & - & - & - \\ \hline
+333 & SISWA 3 & 10C & - & - & - & - & - & - & - & - & - & - & - & - & - \\ \hline
+2110 & Sopia Refaldi & A1 & 0 & - & - & - & - & - & 20 & - & - & - & - & - & - \\ \hline
+
+\end{longtable}
+\end{landscape}
+\end{document}

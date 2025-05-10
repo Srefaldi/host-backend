@@ -1,0 +1,184 @@
+# Create User
+POST http://localhost:5000/users
+Content-Type: application/json
+
+
+{
+    "name": "Siswa 2",
+    "password": "1234",
+    "confPassword": "123",
+    "role": "user",
+    "nis":"12345"
+}
+###
+# Get all user
+GET http://localhost:5000/users
+
+
+###
+# GET SINGLE USER
+GET http://localhost:5000/users/97340949-2eee-43fe-836e-3f142f17875f
+
+
+###
+# Login request
+POST http://localhost:5000/login
+Content-Type: application/json
+
+{
+    "nis": "1234",
+    "password": "123"
+}
+
+###
+# Update
+PATCH  http://localhost:5000/users/00cc4abd-25a7-49f2-ad23-e5fe488bdd7e
+Content-Type: application/json
+
+
+{
+    "name": "Siswa",
+    "nis": "1234",
+    "password": "123",
+
+    "confPassword": "123",
+    "role": "user"
+}
+
+
+###
+# Delate
+DELETE http://localhost:5000/users/2a60f550-bf95-4453-8ab9-455e57c78361
+
+
+
+### 
+# Login USer
+
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+    "nis": "1234",
+    "password": "123"
+}
+
+###
+POST http://localhost:5000/login
+Content-Type: application/json
+
+{
+    "email": "Faldi@gmail.com",
+    "password": "123456"
+}
+
+
+###
+GET http://localhost:5000/me
+Content-Type: application/json
+
+
+
+
+
+###
+# Dafatr Guru
+POST http://localhost:5000/register-guru
+Content-Type: application/json
+
+{
+  "fullName": "John Doe",
+  "nip": "123456789",
+  "password": "password123",
+  "school": "SMA 1 Jakarta"
+}
+####
+#Daftar Siswa
+POST http://localhost:5000/register-siswa
+Content-Type: application/json
+
+{
+  "fullName": "Sopia Refaldi",
+  "nis": "2110",
+  "password": "123",
+  "class": "A1",
+  "token": "123"
+}
+
+###
+# Update Progress
+PATCH http://localhost:5000/users/07801026-56f4-4a77-a612-73b60b16b3a6/progress
+Content-Type: application/json
+
+{
+  "progress": 20
+}
+
+
+####
+# Latihan 1
+
+POST http://localhost:5000/scores
+Content-Type: application/json
+
+{
+  "user_id": "1b72a99a-6991-439a-ae5f-fe82d29834e9",
+  "type": "latihan",
+  "chapter": 2,
+  "score": 90 
+}
+###
+# Login request
+POST http://localhost:5000/login
+Content-Type: application/json
+
+{
+    "nis": "2110",
+    "password": "123"
+}
+###
+DELETE http://localhost:5000/logout
+Content-Type: application/json
+
+
+###
+# CRUD
+#BUAT
+POST http://localhost:5000/questions
+Content-Type: application/json
+Cookie: connect.sid=<your_session_cookie>
+
+{
+  "evaluation_id": 1,
+  "question_text": "Coba",
+  "option_a": "Jakarta",
+  "option_b": "Bandung",
+  "option_c": "Surabaya",
+  "option_d": "Medan",
+  "option_e": "Makassar",
+  "correct_answer": "A"
+}
+###
+#AMBIL
+GET http://localhost:5000/questions/evaluation/1
+Cookie: connect.sid=<your_session_cookie>
+
+###
+#UPDATE
+PATCH http://localhost:5000/questions/1
+Content-Type: application/json
+Cookie: connect.sid=<your_session_cookie>
+
+{
+  "question_text": "Apa ibu kota negara Indonesia?",
+  "option_a": "Jakarta",
+  "option_b": "Bandung",
+  "option_c": "Surabaya",
+  "option_d": "Medan",
+  "option_e": "Makassar",
+  "correct_answer": "A"
+}
+###
+#HAPUS
+DELETE http://localhost:5000/questions/1
+Cookie: connect.sid=<your_session_cookie>
