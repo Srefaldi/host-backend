@@ -1,22 +1,28 @@
 import { Sequelize } from "sequelize";
+import dotenv from "dotenv";
 
-const db = new Sequelize("Csharp_db", "root", "", {
-  host: "localhost",
-  dialect: "mysql",
-  define: {
-    charset: "utf8mb4",
-    collate: "utf8mb4_unicode_ci",
-    freezeTableName: true,
-  },
-  dialectOptions: {
-    charset: "utf8mb4",
-  },
-});
+dotenv.config();
+
+const db = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASS,
+  {
+    host: process.env.DB_HOST,
+    dialect: process.env.DB_DIALECT,
+    define: {
+      charset: "utf8mb4",
+      collate: "utf8mb4_unicode_ci",
+      freezeTableName: true,
+    },
+    dialectOptions: {
+      charset: "utf8mb4",
+    },
+  }
+);
 
 db.authenticate()
   .then(() => console.log("Database connected"))
   .catch((err) => console.error("Database connection error:", err));
 
 export default db;
-
-// test
