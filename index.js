@@ -27,26 +27,15 @@ const store = new sessionStore({
 
 (async () => {
   try {
+    // Sinkronkan semua tabel secara otomatis
+    await db.sync({ force: false });
+    console.log("All database tables synced");
+
+    // Sinkronkan tabel sesi
     await store.sync({ force: false });
     console.log("Sessions table synced");
 
-    await Kkm.sync({ force: false });
-    console.log("KKM table synced");
-
-    await Question.sync({ force: false });
-    console.log("Questions table synced");
-
-    await Score.sync({ force: false });
-    console.log("Scores table synced");
-
-    await Evaluation.sync({ force: false });
-    console.log("Evaluations table synced");
-
-    await User.sync({ force: false });
-    console.log("Users table synced");
-
-    console.log("Database synced successfully");
-
+    // Inisialisasi data awal untuk Evaluations
     const evaluations = await Evaluation.findAll();
     if (evaluations.length === 0) {
       for (let i = 1; i <= 6; i++) {
@@ -61,6 +50,7 @@ const store = new sessionStore({
       console.log("Evaluations initialized");
     }
 
+    // Inisialisasi data awal untuk KKM
     const kkmRecords = await Kkm.findAll();
     if (kkmRecords.length === 0) {
       const evaluations = await Evaluation.findAll();
