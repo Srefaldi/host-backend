@@ -18,3 +18,5 @@ db.authenticate()
   .catch((err) => console.error("Database connection error:", err));
 
 export default db;
+
+// test
