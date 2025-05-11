@@ -214,6 +214,8 @@ const updateQuestion = async (req, res) => {
     correct_answer,
   } = req.body;
 
+  console.log("updateQuestion request:", { id, ...req.body }); // Debugging
+
   // Validasi input
   if (
     !evaluation_id ||
