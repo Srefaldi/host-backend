@@ -152,261 +152,6 @@ const createScore = async (req, res) => {
   }
 };
 
-const exportScoresToPDF = async (req, res) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ msg: "Mohon login ke akun anda" });
-  }
-
-  const { class: userClass } = req.query;
-
-  try {
-    // Memeriksa apakah pdflatex tersedia
-    console.log("Memeriksa pdflatex...");
-    try {
-      const { stdout } = await execAsync("pdflatex --version");
-      console.log("pdflatex terinstal:", stdout);
-    } catch (error) {
-      console.error("pdflatex tidak ditemukan:", error.message);
-      return res.status(500).json({
-        msg: "pdflatex tidak terinstal atau tidak ditemukan di PATH",
-        error: error.message,
-      });
-    }
-
-    // Mengambil data pengguna
-    console.log("Mengambil data pengguna...");
-    const whereClause = { role: "user" };
-    if (userClass) {
-      whereClause.class = userClass;
-    }
-
-    const users = await User.findAll({
-      attributes: ["uuid", "name", "nis", "class"],
-      where: whereClause,
-      order: [["name", "ASC"]],
-    });
-
-    if (!users.length) {
-      console.log("Tidak ada siswa ditemukan");
-      return res.status(404).json({
-        msg: `Tidak ada siswa ditemukan untuk kelas ${
-          userClass || "semua kelas"
-        }`,
-      });
-    }
-    console.log(`Ditemukan ${users.length} siswa`);
-
-    console.log("Mengambil skor pengguna...");
-    const usersWithScores = await Promise.all(
-      users.map(async (user) => {
-        const scores = await Score.findAll({
-          where: { user_id: user.uuid },
-          attributes: ["type", "chapter", "score"],
-        });
-        return { ...user.toJSON(), scores };
-      })
-    );
-    console.log("Skor pengguna diambil");
-
-    // Logging data pengguna untuk debugging
-    usersWithScores.forEach((user, index) => {
-      console.log(`Data pengguna ${index + 1}:`, {
-        nis: user.nis,
-        name: user.name,
-        class: user.class,
-      });
-    });
-
-    // Fungsi untuk meng-escape karakter LaTeX dengan logging
-    const escapeLatex = (str) => {
-      if (!str) return "-";
-      const originalStr = str;
-      str = str
-        .replace(/&/g, "\\&")
-        .replace(/%/g, "\\%")
-        .replace(/\$/g, "\\$")
-        .replace(/#/g, "\\#")
-        .replace(/_/g, "\\_")
-        .replace(/{/g, "\\{")
-        .replace(/}/g, "\\}")
-        .replace(/~/g, "\\textasciitilde{}")
-        .replace(/\^/g, "\\textasciicircum{}")
-        .replace(/\\/g, "\\textbackslash{}")
-        .replace(/[-\u001F\u007F-\uFFFF]/g, ""); // Hapus karakter kontrol dan non-ASCII
-      if (originalStr !== str) {
-        console.log(`Karakter di-escape: "${originalStr}" menjadi "${str}"`);
-      }
-      return str;
-    };
-
-    // Membuat konten LaTeX
-    console.log("Membuat konten LaTeX...");
-    let latexContent = `
-\\documentclass[a4paper,12pt]{article}
-\\usepackage{geometry}
-\\geometry{a4paper, margin=1in}
-\\usepackage{booktabs}
-\\usepackage{longtable}
-\\usepackage{pdflscape}
-\\usepackage[utf8]{inputenc}
-\\usepackage[T1]{fontenc}
-\\usepackage{lmodern}
-\\usepackage{array}
-\\usepackage{colortbl}
-\\definecolor{gray}{rgb}{0.9,0.9,0.9}
-
-\\begin{document}
-
-\\begin{landscape}
-\\begin{center}
-{\\Large \\textbf{Daftar Nilai Siswa ${escapeLatex(
-      userClass ? `- Kelas ${userClass}` : ""
-    )}}}
-\\end{center}
-
-\\vspace{0.5cm}
-
-\\begin{longtable}{|c|c|c|*{6}{c}|*{6}{c}|c|}
-\\hline
-\\rowcolor{gray}
-\\textbf{NIS} & \\textbf{Nama} & \\textbf{Kelas} & \\multicolumn{6}{c|}{\\textbf{Latihan Bab}} & \\multicolumn{6}{c|}{\\textbf{Kuis Bab}} & \\textbf{Evaluasi Akhir} \\\\
-\\cline{4-15}
-\\rowcolor{gray}
-& & & 1 & 2 & 3 & 4 & 5 & 6 & 1 & 2 & 3 & 4 & 5 & 6 & \\\\
-\\hline
-\\endhead
-`;
-
-    usersWithScores.forEach((user) => {
-      const getScore = (scores, type, chapter) => {
-        const score = scores.find(
-          (s) =>
-            s.type === type &&
-            (type === "evaluasi_akhir" ? true : s.chapter === chapter)
-        );
-        return score ? Math.floor(score.score) : "-";
-      };
-
-      latexContent += `${escapeLatex(user.nis)} & ${escapeLatex(
-        user.name
-      )} & ${escapeLatex(user.class || "-")} & `;
-      for (let i = 1; i <= 6; i++) {
-        latexContent += `${getScore(user.scores, "latihan", i)} & `;
-      }
-      for (let i = 1; i <= 6; i++) {
-        latexContent += `${getScore(user.scores, "evaluasi", i)} & `;
-      }
-      latexContent += `${getScore(
-        user.scores,
-        "evaluasi_akhir",
-        null
-      )} \\\\ \\hline\n`;
-    });
-
-    latexContent += `
-\\end{longtable}
-\\end{landscape}
-\\end{document}
-`;
-
-    // Menulis file LaTeX
-    console.log("Menulis file LaTeX...");
-    const tempDir = path.join(process.cwd(), "temp");
-    await fs.mkdir(tempDir, { recursive: true });
-    const texFilePath = path.join(tempDir, `scores_${Date.now()}.tex`);
-    const pdfFilePath = texFilePath.replace(".tex", ".pdf");
-
-    try {
-      await fs.writeFile(texFilePath, latexContent, "utf8");
-      console.log("File LaTeX ditulis ke:", texFilePath);
-    } catch (error) {
-      console.error("Gagal menulis file LaTeX:", error.message);
-      return res.status(500).json({
-        msg: "Gagal menulis file LaTeX",
-        error: error.message,
-      });
-    }
-
-    // Mengompilasi LaTeX ke PDF dengan dua kali kompilasi
-    console.log("Mengompilasi LaTeX ke PDF...");
-    try {
-      for (let i = 0; i < 2; i++) {
-        console.log(`Menjalankan pdflatex ke-${i + 1}...`);
-        const { stdout, stderr } = await execAsync(
-          `pdflatex -interaction=nonstopmode -output-directory=${tempDir} ${texFilePath}`,
-          { timeout: 30000 }
-        );
-        console.log(`pdflatex run ${i + 1} stdout:`, stdout);
-        if (stderr) {
-          console.warn(`pdflatex run ${i + 1} stderr:`, stderr);
-        }
-      }
-      console.log("PDF berhasil dikompilasi:", pdfFilePath);
-    } catch (error) {
-      console.error("Gagal mengompilasi LaTeX:", error.message);
-      const logFilePath = texFilePath.replace(".tex", ".log");
-      let logContent = "";
-      try {
-        logContent = await fs.readFile(logFilePath, "utf8");
-        console.log("Isi file log LaTeX:", logContent);
-      } catch (logError) {
-        console.error("Gagal membaca file log LaTeX:", logError.message);
-      }
-      return res.status(500).json({
-        msg: "Gagal menghasilkan PDF",
-        error: error.message,
-        latexLog: logContent,
-      });
-    }
-
-    // Membaca dan mengirim PDF
-    console.log("Membaca file PDF...");
-    let pdfBuffer;
-    try {
-      pdfBuffer = await fs.readFile(pdfFilePath);
-      console.log("File PDF berhasil dibaca");
-    } catch (error) {
-      console.error("Gagal membaca file PDF:", error.message);
-      return res.status(500).json({
-        msg: "Gagal membaca file PDF",
-        error: error.message,
-      });
-    }
-
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=Daftar_Nilai_${escapeLatex(
-        userClass || "Semua_Kelas"
-      )}.pdf`
-    );
-    res.send(pdfBuffer);
-    console.log("File PDF dikirim ke klien");
-
-    // Membersihkan file sementara
-    console.log("Membersihkan file sementara...");
-    const cleanupFiles = [
-      texFilePath,
-      pdfFilePath,
-      texFilePath.replace(".tex", ".aux"),
-      texFilePath.replace(".tex", ".log"),
-      texFilePath.replace(".tex", ".out"),
-    ];
-    for (const file of cleanupFiles) {
-      await fs.unlink(file).catch((err) => {
-        console.warn(`Gagal menghapus ${file}:`, err.message);
-      });
-    }
-    console.log("File sementara dibersihkan");
-  } catch (error) {
-    console.error("Error di exportScoresToPDF:", error.message);
-    return res.status(500).json({
-      msg: "Terjadi kesalahan pada server",
-      error: error.message,
-    });
-  }
-};
-
 const exportScoresToExcel = async (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ msg: "Mohon login ke akun anda" });
@@ -510,11 +255,48 @@ const exportScoresToExcel = async (req, res) => {
       .json({ msg: "Terjadi kesalahan pada server", error: error.message });
   }
 };
+const exportScoresToJSON = async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ msg: "Mohon login ke akun anda" });
+  }
+
+  const { class: userClass } = req.query;
+
+  try {
+    const whereClause = { role: "user" };
+    if (userClass) {
+      whereClause.class = userClass;
+    }
+
+    const users = await User.findAll({
+      attributes: ["uuid", "name", "nis", "class"],
+      where: whereClause,
+      order: [["name", "ASC"]],
+    });
+
+    const usersWithScores = await Promise.all(
+      users.map(async (user) => {
+        const scores = await Score.findAll({
+          where: { user_id: user.uuid },
+          attributes: ["type", "chapter", "score"],
+        });
+        return { ...user.toJSON(), scores };
+      })
+    );
+
+    res.status(200).json(usersWithScores);
+  } catch (error) {
+    console.error("Error di exportScoresToJSON:", error.message);
+    res
+      .status(500)
+      .json({ msg: "Terjadi kesalahan pada server", error: error.message });
+  }
+};
 
 export {
   getScores,
   getScoresByUserId,
   createScore,
-  exportScoresToPDF,
   exportScoresToExcel,
+  exportScoresToJSON,
 };
