@@ -76,7 +76,6 @@ app.use(
   cors({
     credentials: true,
     origin: function (origin, callback) {
-      // Izinkan permintaan tanpa origin (misalnya, curl atau Postman)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
@@ -94,7 +93,7 @@ app.options("*", cors());
 // ✅ Konfigurasi session
 app.use(
   session({
-    секрет: process.env.SESS_SECRET || "your-secret-key",
+    secret: process.env.SESS_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: false,
     store: store,
