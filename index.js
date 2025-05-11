@@ -24,8 +24,8 @@ app.set("trust proxy", 1);
 const sessionStore = SequelizeStore(session.Store);
 const store = new sessionStore({
   db: db,
-  checkExpirationInterval: 15 * 60 * 1000, // Bersihkan sesi kadaluarsa setiap 15 menit
-  expiration: 24 * 60 * 60 * 1000, // Sesi berlaku selama 24 jam
+  checkExpirationInterval: 15 * 60 * 1000,
+  expiration: 24 * 60 * 60 * 1000,
 });
 
 // Sinkronisasi database dan model
@@ -44,7 +44,6 @@ const store = new sessionStore({
     await User.sync({ force: false });
     console.log("Users table synced");
 
-    // Inisialisasi evaluasi
     const evaluations = await Evaluation.findAll();
     if (evaluations.length === 0) {
       for (let i = 1; i <= 6; i++) {
@@ -54,7 +53,6 @@ const store = new sessionStore({
       console.log("Evaluations initialized");
     }
 
-    // Inisialisasi KKM
     const kkmRecords = await Kkm.findAll();
     if (kkmRecords.length === 0) {
       const evaluations = await Evaluation.findAll();
@@ -70,37 +68,41 @@ const store = new sessionStore({
 
 // ✅ Konfigurasi CORS
 const allowedOrigins = [
-  "http://localhost:3000", // Lokal
-  "https://your-frontend.vercel.app", // Ganti dengan URL frontend kamu
+  "http://localhost:3000",
+  "https://your-frontend.vercel.app", // Ganti dengan URL frontend Anda
 ];
 
 app.use(
   cors({
     credentials: true,
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`Origin ${origin} not allowed by CORS`));
+    origin: function (origin, callback) {
+      // Izinkan permintaan tanpa origin (misalnya, curl atau Postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
       }
+      return callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
   })
 );
+
+// ✅ Tangani permintaan OPTIONS secara eksplisit
+app.options("*", cors());
 
 // ✅ Konfigurasi session
 app.use(
   session({
-    secret: process.env.SESS_SECRET || "your-secret-key",
+    секрет: process.env.SESS_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: false,
     store: store,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // true di Railway
+      secure: process.env.NODE_ENV === "production" ? true : false,
       httpOnly: true,
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 24 jam
+      maxAge: 24 * 60 * 60 * 1000,
     },
   })
 );
@@ -111,6 +113,7 @@ app.use(express.json());
 // ✅ Logging sesi dan cookie (untuk debug)
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log("[DEBUG] Origin:", req.headers.origin);
   console.log("[DEBUG] Session ID:", req.sessionID);
   console.log("[DEBUG] Session userId:", req.session.userId);
   console.log("[DEBUG] Cookies:", req.headers.cookie);
