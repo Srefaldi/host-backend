@@ -69,7 +69,7 @@ const store = new sessionStore({
 // ✅ Konfigurasi CORS
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://your-frontend.vercel.app", // Ganti dengan URL frontend Anda
+  "https://host-frontend-five.vercel.app", // Ganti dengan URL frontend Anda
 ];
 
 app.use(
