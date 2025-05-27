@@ -2,7 +2,7 @@ import User from "../../models/LOGIN/UserModel.js";
 import argon2 from "argon2";
 
 // Token rahasia statis
-const STUDENT_TOKEN = process.env.STUDENT_TOKEN || "123";
+const STUDENT_TOKEN = process.env.STUDENT_TOKEN || "HAYQK";
 
 // Login Controller
 export const Login = async (req, res) => {
